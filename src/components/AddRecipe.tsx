@@ -18,41 +18,60 @@ function AddRecipe() {
     data[index][event.target.name as keyof InputField] = event.target.value;
     setInputFields(data);
   }
+
+  function addFields() {
+    setInputFields([...inputFields, { ingredient: "", substitutes: "" }]);
+  }
+
+  function removeFields(index: number) {
+    const data = [...inputFields];
+    data.splice(index, 1);
+    setInputFields(data);
+  }
+
   return (
     <>
       <h2>Nowy przepis</h2>
-      <form action="">
-        <label htmlFor="name">Nazwa:</label>
-        <input type="text" name="name" id="name" />
-        {inputFields.map((input, index) => {
-          return (
-            <div key={index}>
-              <label htmlFor="ingredient">Składnik:</label>
+      <label>
+        Nazwa:
+        <input type="text" name="name" autoComplete="off" />
+      </label>
+      {inputFields.map((input, index) => {
+        return (
+          <div key={index}>
+            <label>
+              Składnik:
               <input
                 type="text"
                 name="ingredient"
-                id="ingredient"
                 value={input.ingredient}
                 placeholder="śmietana"
+                autoComplete="off"
                 onChange={(event) => {
                   handleChange(index, event);
                 }}
               />
-              <label htmlFor="substitutes">Zamienniki (po przecinkach):</label>
+            </label>
+            <label>
+              Zamienniki (po przecinkach):
               <input
                 type="text"
                 name="substitutes"
-                id="substitutes"
                 value={input.substitutes}
                 placeholder="jogurt naturalny, skyr"
+                autoComplete="off"
                 onChange={(event) => {
                   handleChange(index, event);
                 }}
               />
-            </div>
-          );
-        })}
-      </form>
+            </label>
+            {inputFields.length > 1 ? (
+              <button onClick={() => removeFields(index)}>x</button>
+            ) : null}
+          </div>
+        );
+      })}
+      <button onClick={addFields}>+</button>
     </>
   );
 }
