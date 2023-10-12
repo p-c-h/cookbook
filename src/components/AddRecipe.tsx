@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "../contexts/LanguageContext";
 
 type InputField = {
   ingredient: string;
@@ -6,6 +7,11 @@ type InputField = {
 };
 
 function AddRecipe() {
+  const { language } = useLanguage() as {
+    language: string;
+    changeLanguage: (newLanguage: string) => void;
+  };
+
   const [inputFields, setInputFields] = useState([
     { ingredient: "", substitutes: "" },
   ]);
@@ -31,11 +37,14 @@ function AddRecipe() {
 
   return (
     <>
-      <h2>Nowy przepis</h2>
+      <h2>{language === "en" ? "New recipe" : "Nowy przepis"}</h2>
       <label>
         Nazwa:
         <input type="text" name="name" autoComplete="off" />
       </label>
+
+      <label htmlFor="category">Kategoria</label>
+
       {inputFields.map((input, index) => {
         return (
           <div key={index}>
