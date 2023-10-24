@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "../contexts/LanguageContext";
+import fetchAndSetData from "../utils/fetchAndSetData";
 
 type InputField = {
   ingredient: string;
@@ -14,11 +15,13 @@ function RecipeManager({ action }: { action: string }) {
 
   const [categories, setCategories] = useState<string[]>();
 
+  const [recipe, setRecipe] = useState<object>();
+
   const [inputFields, setInputFields] = useState([
     { ingredient: "", substitutes: "" },
   ]);
 
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
 
   function handleChange(
     index: number,
@@ -40,31 +43,27 @@ function RecipeManager({ action }: { action: string }) {
   }
 
   useEffect(() => {
-    if (action === "add") {
-      const fetchCategories = async () => {
-        try {
-          const response = await fetch(
-            "https://example.com/non-existing-endpoint"
-          );
-          const categories: string[] = await response.json();
-          setCategories(categories);
-        } catch (error) {
-          if (error instanceof Error) {
-            setError(error.message);
-          }
-        }
-      };
+    fetchAndSetData(
+      "https://example.com/non-existing-endpoint",
+      setCategories,
+      setErrors,
+      language
+    );
 
-      fetchCategories();
-    } else if (action === "edit") {
-      // do something
+    if (action === "edit") {
+      fetchAndSetData(
+        "https://example.com/non-existing-endpoint",
+        setRecipe,
+        setErrors,
+        language
+      );
     }
-  }, [action]);
+  }, [action, language]);
 
   return (
     <>
-      {error ? (
-        <span>{error}</span>
+      {errors ? (
+        <span>{errors}</span>
       ) : categories ? (
         <div>
           <h2>{language === "en" ? "New recipe" : "Nowy przepis"}</h2>
