@@ -18,9 +18,14 @@ function RecipeManager({ action }: { action: string }) {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const [categories, setCategories] = useState<string[]>();
+  const [categories, setCategories] = useState([]);
 
-  const [recipe, setRecipe] = useState<Recipe>();
+  const [recipe, setRecipe] = useState<Recipe>({
+    name: "",
+    category: "",
+    ingredients: [],
+    note: "",
+  });
 
   const [inputFields, setInputFields] = useState([
     { ingredient: "", substitutes: "" },
@@ -132,13 +137,22 @@ function RecipeManager({ action }: { action: string }) {
           <label>
             {t("recipeManager.name")}
             :
-            <input type="text" name="name" autoComplete="off" />
+            <input
+              type="text"
+              name="name"
+              autoComplete="off"
+              value={recipe.name}
+            />
           </label>
           <label>
             {language === "en" ? "Category" : "Kategoria"}:
             <select name="categories">
-              {categories?.map((category) => {
-                return <option value={category}>{category}</option>;
+              {categories.map((category, index) => {
+                return (
+                  <option key={index} value={category}>
+                    {category}
+                  </option>
+                );
               })}
             </select>
           </label>
