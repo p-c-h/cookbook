@@ -30,7 +30,6 @@ function App() {
           {lngs[lng].nativeName}
         </button>
       ))}
-      <h1>{t("loading")}</h1>
       <div>
         <Outlet />
       </div>
