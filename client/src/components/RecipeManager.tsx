@@ -171,15 +171,6 @@ function RecipeManager({ action }: { action: string }) {
           <label>
             {t("recipeManager.category")}:
             <input {...register("checkbox")} type="checkbox" value="" />
-            <select name="categories">
-              {categories.map((category, index) => {
-                return (
-                  <option key={index} value={category}>
-                    {category}
-                  </option>
-                );
-              })}
-            </select>
           </label>
           {inputFields.map((input, index) => {
             return (
