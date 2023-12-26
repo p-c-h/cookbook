@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
-import { Recipe } from "../types/types";
-import { useLanguage } from "../contexts/LanguageContext";
 import { useTranslation } from "react-i18next";
+import { useForm } from "react-hook-form";
+import { FieldValues } from "react-hook-form";
+
+import { Recipe } from "../../lib/types";
+import { useLanguage } from "../contexts/LanguageContext";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { RecipeSchema } from "../../lib/types";
+import { TRecipeSchema } from "../../lib/types";
+
+import { categories } from "../../../shared/constants";
 
 type InputField = {
   ingredient: string;
@@ -9,21 +18,55 @@ type InputField = {
 };
 
 function RecipeManager({ action }: { action: string }) {
+  const { t } = useTranslation();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubbmiting },
+    setError,
+    reset,
+    getValues,
+  } = useForm<TRecipeSchema>({ resolver: zodResolver(RecipeSchema) });
+
+  const onSubmit = async (data: FieldValues) => {
+    const response = await fetch("http://localhost:3000/recipes/new", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const responseData = await response.json();
+    if (!response.ok) {
+      alert("Submitting form failed");
+      return;
+    }
+
+    if (responseData.errors) {
+      const errors = responseData.errors;
+      if (errors.name) {
+        setError("name", {
+          type: "server",
+          message: errors.name,
+        });
+      }
+    }
+  };
+
   const { language } = useLanguage() as {
     language: string;
     changeLanguage: (newLanguage: string) => void;
   };
 
-  const { t } = useTranslation();
-
   const [isLoading, setIsLoading] = useState(true);
 
-  const [categories, setCategories] = useState([]);
+  // const [categories, setCategories] = useState([]);
 
   const [recipe, setRecipe] = useState<Recipe>({
     name: "",
     category: "",
-    ingredients: [],
+    ingredients: [{ original: "", substitutes: "" }],
     note: "",
   });
 
@@ -31,9 +74,9 @@ function RecipeManager({ action }: { action: string }) {
     { ingredient: "", substitutes: "" },
   ]);
 
-  const [error, setError] = useState<string>();
+  const [errorA, setErrorA] = useState<string>();
 
-  function handleChange(
+  function handleIngrChange(
     index: number,
     event: React.ChangeEvent<HTMLInputElement>
   ) {
@@ -64,88 +107,70 @@ function RecipeManager({ action }: { action: string }) {
     const controller = new AbortController();
     const signal = controller.signal;
 
-    const fetchCategories = fetch("http://localhost:3000/categories", {
-      signal,
-    });
-
-    const fetchRecipe = fetch("http://localhost:3000/recipes/1", { signal });
-
-    const promises = [fetchCategories];
-
-    if (action === "add") promises.push(fetchRecipe);
-
-    Promise.all(promises)
-      .then((responses) => {
-        return Promise.all(
-          responses.map((response) => {
-            if (!response.ok) {
-              // Only one error gets to the catch block: https://jsfiddle.net/gek0n/2sf1ow3x/30/
-              throw new Error(
-                language === "en"
-                  ? "Network response was not ok"
-                  : "Odpowiedź nie powiodła się"
-              );
-            }
-            return response.json();
-          })
-        );
-      })
-      .then((results) => {
-        setCategories(results[0]);
-        if (action === "add") setRecipe(results[1]);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        // https://stackoverflow.com/questions/64452484/how-can-i-safely-access-caught-error-properties-in-typescript
-        let message;
-        if (err instanceof Error) {
-          if (err.name === "AbortError") {
-            console.log(
-              language === "en"
-                ? "Successfully aborted"
-                : "Przerwano prawidłowo"
-            );
-            return;
-          } else {
-            message = err.message;
+    if (action === "add") {
+      fetch("http://localhost:3000/recipes/1", { signal })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(t("statusNotOk"));
           }
-        } else {
-          message = language === "en" ? "Unknown error" : "Nieznany błąd";
-        }
-        setError(message);
-        setIsLoading(false);
-      });
+          return response.json();
+        })
+        .then((result) => {
+          setRecipe(result);
+          setIsLoading(false);
+        })
+        .catch((err) => {
+          let message;
+          if (err instanceof Error) {
+            if (err.name === "AbortError") {
+              console.log(t("abortSuccess"));
+              return;
+            } else {
+              message = err.message;
+            }
+          } else {
+            message = t("unknownError");
+          }
+          setErrorA(message);
+          setIsLoading(false);
+        });
+    }
 
     return () => {
       controller.abort();
     };
-  }, [action, language]);
+  }, [action]);
 
   return (
     <>
       {isLoading ? (
         <span>{t("loading")}</span>
-      ) : error ? (
-        <p>{error}</p>
+      ) : errorA ? (
+        <p>{errorA}</p>
       ) : categories ? (
-        <div>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <h2>
             {action === "edit"
               ? t("recipeManager.editRecipe")
               : t("recipeManager.newRecipe")}
           </h2>
+
           <label>
             {t("recipeManager.name")}
             :
             <input
+              {...register("name")}
               type="text"
               name="name"
               autoComplete="off"
-              value={recipe.name}
+              className="border-2"
             />
           </label>
+          {errors.name && <p className="text-red-500">{errors.name.message}</p>}
+
           <label>
-            {language === "en" ? "Category" : "Kategoria"}:
+            {t("recipeManager.category")}:
+            <input {...register("checkbox")} type="checkbox" value="" />
             <select name="categories">
               {categories.map((category, index) => {
                 return (
@@ -169,7 +194,7 @@ function RecipeManager({ action }: { action: string }) {
                     placeholder={language === "en" ? "cream" : "śmietana"}
                     autoComplete="off"
                     onChange={(event) => {
-                      handleChange(index, event);
+                      handleIngrChange(index, event);
                     }}
                   />
                 </label>
@@ -189,7 +214,7 @@ function RecipeManager({ action }: { action: string }) {
                     }
                     autoComplete="off"
                     onChange={(event) => {
-                      handleChange(index, event);
+                      handleIngrChange(index, event);
                     }}
                   />
                 </label>
@@ -208,7 +233,8 @@ function RecipeManager({ action }: { action: string }) {
               maxLength={1000}
             ></textarea>
           </label>
-        </div>
+          <button type="submit">Submit</button>
+        </form>
       ) : (
         <span>
           Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
