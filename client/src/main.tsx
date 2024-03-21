@@ -5,8 +5,14 @@ import { LanguageProvider } from "./contexts/LanguageContext.tsx";
 
 import App from "./App.tsx";
 import RecipeManager from "./components/RecipeManager.tsx";
+import RecipeManager2 from "./components/RecipeManager2.tsx";
 
 import "./i18n/i18n.ts";
+
+import "./index.css";
+
+// Delete Foo
+import Foo from "./components/Foo.tsx";
 
 const router = createBrowserRouter([
   {
@@ -17,7 +23,15 @@ const router = createBrowserRouter([
         path: "/recipes/add",
         element: <RecipeManager action="add" />,
       },
+      {
+        path: "/rm2",
+        element: <RecipeManager2 />,
+      },
     ],
+  },
+  {
+    path: "/foo",
+    element: <Foo />,
   },
 ]);
 

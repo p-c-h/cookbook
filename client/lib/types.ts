@@ -8,14 +8,17 @@ export type Recipe = {
   note: string;
 };
 
+const stringSchema = z
+  .string()
+  .trim()
+  .min(2, { message: "Must be 2 or more characters long" })
+  .max(35, { message: "Must be 35 or fewer characters long" });
+
 export const RecipeSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, { message: "Must be 2 or more characters long" })
-    .max(35, { message: "Must be 35 or fewer characters long" }),
+  recipeName: stringSchema,
   checkbox: z
     .array(z.string())
+    // If you get "Expected array, received boolean" add defaultValues: {checkbox: []} as seen here: https://stackoverflow.com/questions/74967542/zod-validation-for-an-array-of-objects
     .nonempty({ message: "Please pick at least one category" })
     .superRefine((val, ctx) => {
       if (val.length)
@@ -32,6 +35,17 @@ export const RecipeSchema = z.object({
         });
       }
     }),
+  ingredients: z.array(
+    z.object({
+      original: z.string(),
+    })
+  ),
 });
 
 export type TRecipeSchema = z.infer<typeof RecipeSchema>;
+
+export const IngredientSchema = z.object({
+  ingredient: z.string().min(2),
+});
+
+export type TIngredientSchema = z.infer<typeof IngredientSchema>;

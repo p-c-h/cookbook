@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm, Controller } from "react-hook-form";
 import { FieldValues } from "react-hook-form";
+
+import Select from "react-select";
 
 import { Recipe } from "../../lib/types";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -10,7 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { RecipeSchema } from "../../lib/types";
 import { TRecipeSchema } from "../../lib/types";
 
-import { categories } from "../../../shared/constants";
+import { sharedCategories } from "../../../shared/constants";
 
 type InputField = {
   ingredient: string;
@@ -23,38 +25,62 @@ function RecipeManager({ action }: { action: string }) {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubbmiting },
+    formState: {
+      errors,
+      // isSubbmiting
+    },
     setError,
-    reset,
-    getValues,
-  } = useForm<TRecipeSchema>({ resolver: zodResolver(RecipeSchema) });
+    // reset,
+    // getValues,
+    control,
+  } = useForm<TRecipeSchema>({
+    defaultValues: {
+      recipeName: "none",
+      checkbox: [],
+      ingredients: [{ original: "" }],
+    },
+    resolver: zodResolver(RecipeSchema),
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    name: "ingredients",
+    control,
+  });
 
   const onSubmit = async (data: FieldValues) => {
-    const response = await fetch("http://localhost:3000/recipes/new", {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const responseData = await response.json();
-    if (!response.ok) {
-      alert("Submitting form failed");
-      return;
-    }
+    console.log(data);
+    // const response = await fetch("http://localhost:3000/recipes/new", {
+    //   method: "POST",
+    //   body: JSON.stringify(data),
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    // });
+    // const responseData = await response.json();
+    // if (!response.ok) {
+    //   alert("Submitting form failed");
+    //   return;
+    // }
 
-    if (responseData.errors) {
-      const errors = responseData.errors;
-      if (errors.name) {
-        setError("name", {
-          type: "server",
-          message: errors.name,
-        });
-      }
-    }
+    // if (responseData.errors) {
+    //   // https://youtu.be/u6PQ5xZAv7Q?si=Zk39YtT8FDkCbJha&t=1856
+    //   const errors = responseData.errors;
+    //   if (errors.recipeName) {
+    //     setError("recipeName", {
+    //       type: "server",
+    //       message: errors.name,
+    //     });
+    //   } else if (errors.checkbox) {
+    //     setError("checkbox", {
+    //       type: "server",
+    //       message: errors.name,
+    //     });
+    //   }
+    // }
   };
 
   const { language } = useLanguage() as {
+    // legacy, use with context. My amateur i18n: https://jsfiddle.net/gek0n/afuh7b24/36/
     language: string;
     changeLanguage: (newLanguage: string) => void;
   };
@@ -147,7 +173,7 @@ function RecipeManager({ action }: { action: string }) {
         <span>{t("loading")}</span>
       ) : errorA ? (
         <p>{errorA}</p>
-      ) : categories ? (
+      ) : sharedCategories ? (
         <form onSubmit={handleSubmit(onSubmit)}>
           <h2>
             {action === "edit"
@@ -159,19 +185,68 @@ function RecipeManager({ action }: { action: string }) {
             {t("recipeManager.name")}
             :
             <input
-              {...register("name")}
+              {...register("recipeName")}
               type="text"
               name="name"
               autoComplete="off"
               className="border-2"
             />
           </label>
-          {errors.name && <p className="text-red-500">{errors.name.message}</p>}
+          {errors.recipeName && (
+            <p className="text-red-500">{errors.recipeName.message}</p>
+          )}
 
-          <label>
-            {t("recipeManager.category")}:
-            <input {...register("checkbox")} type="checkbox" value="" />
-          </label>
+          {/* fieldset checkbox kategorie as seen here: https://react-hook-form.com/docs/useform/register */}
+          <fieldset>
+            <legend>{t("recipeManager.category")}</legend>
+            {sharedCategories.map((category) => (
+              <label key={category}>
+                {/* {t(`recipeManager.categories.${category}`)} */}
+                <input
+                  {...register("checkbox")}
+                  type="checkbox"
+                  value={category}
+                />
+              </label>
+            ))}
+          </fieldset>
+          {errors.checkbox && (
+            <p className="text-red-500">{errors.checkbox.message}</p>
+          )}
+
+          {/* ingredients */}
+
+          <ul>
+            {fields.map((item, index) => (
+              <li key={item.id}>
+                <Controller
+                  name={`ingredients.${index}.original`}
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      options={[
+                        {
+                          label: "A",
+                          value: "A",
+                        },
+                      ]}
+                    />
+                  )}
+                />
+                <button type="button" onClick={() => remove(index)}>
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          <button type="button" onClick={() => append({ original: "" })}>
+            Add Ingredient
+          </button>
+
+          {/* ingredients end */}
+
           {inputFields.map((input, index) => {
             return (
               <div key={index}>
