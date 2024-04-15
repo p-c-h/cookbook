@@ -7,6 +7,8 @@ import App from "./App.tsx";
 import RecipeManager from "./components/RecipeManager.tsx";
 import RecipeManager2 from "./components/RecipeManager2.tsx";
 
+import SignUp from "./components/SignUp.tsx";
+
 import "./i18n/i18n.ts";
 
 import "./index.css";
@@ -19,6 +21,10 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
+      {
+        path: "/signup",
+        element: <SignUp />,
+      },
       {
         path: "/recipes/add",
         element: <RecipeManager action="add" />,
